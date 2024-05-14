@@ -18,9 +18,10 @@ import {
 import { Helmet, history, useModel } from '@umijs/max';
 import { Alert, Tabs, message } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { flushSync } from 'react-dom';
 import Settings from '../../../../config/defaultSettings';
+import {listChartByPageUsingPost} from "@/services/mybi/chartController";
 const useStyles = createStyles(({ token }) => {
   return {
     action: {
@@ -100,6 +101,12 @@ const Login: React.FC = () => {
       });
     }
   };
+  useEffect(()=>{
+    listChartByPageUsingPost({}).then(res=>{
+      console.log('result',res)
+    })
+  })
+
   const handleSubmit = async (values: API.LoginParams) => {
     try {
       // 登录
