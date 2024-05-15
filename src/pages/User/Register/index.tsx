@@ -1,6 +1,5 @@
 import { Footer } from '@/components';
-import { listChartByPageUsingPost } from '@/services/mybi/chartController';
-import { getLoginUserUsingGet, userLoginUsingPost } from '@/services/mybi/userController';
+import {userRegisterUsingPost} from '@/services/mybi/userController';
 import {
   AlipayCircleOutlined,
   LockOutlined,
@@ -9,11 +8,10 @@ import {
   WeiboCircleOutlined,
 } from '@ant-design/icons';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
-import { Helmet, Link, history, useModel } from '@umijs/max';
+import { Helmet, history } from '@umijs/max';
 import { Alert, Tabs, message } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useEffect, useState } from 'react';
-import { flushSync } from 'react-dom';
+import React, { useState } from 'react';
 import Settings from '../../../../config/defaultSettings';
 
 const useStyles = createStyles(({ token }) => {
@@ -76,42 +74,35 @@ const LoginMessage: React.FC<{
     />
   );
 };
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});
   const [type, setType] = useState<string>('account');
-  const { initialState, setInitialState } = useModel('@@initialState');
   const { styles } = useStyles();
-  //登陆成功后，获取用户信息
-  const fetchUserInfo = async () => {
-    const userInfo = await getLoginUserUsingGet();
-    if (userInfo) {
-      //保存前端已经登陆的信息（整个页面的全局变量）
-      flushSync(() => {
-        setInitialState((s) => ({
-          ...s,
-          currentUser: userInfo,
-        }));
-      });
+
+
+
+  const handleSubmit = async (values: API.UserRegisterRequest) => {
+    const {userAccount,userPassword,checkPassword}=values;
+    //校验
+    //两个等于号，值相等且类型相等
+    if(userPassword!==checkPassword){
+      message.error('两次输入的密码不一致');
+      return;
     }
-  };
-
-
-  const handleSubmit = async (values: API.UserLoginRequest) => {
     try {
-      // 登录
-      const res = await userLoginUsingPost(values);
+      // 注册
+      const res = await userRegisterUsingPost(values);
       if (res.code === 0) {
-        const defaultLoginSuccessMessage = '登录成功！';
+        const defaultLoginSuccessMessage = '注册成功！';
         message.success(defaultLoginSuccessMessage);
-        await fetchUserInfo();
         const urlParams = new URL(window.location.href).searchParams;
-        history.push(urlParams.get('redirect') || '/');
+        history.push(urlParams.get('redirect') || '/user/login');
         return;
       } else {
         message.error(res.message);
       }
     } catch (error) {
-      const defaultLoginFailureMessage = '登录失败，请重试！';
+      const defaultLoginFailureMessage = '注册失败，请重试！';
       console.log(error);
       message.error(defaultLoginFailureMessage);
     }
@@ -121,7 +112,7 @@ const Login: React.FC = () => {
     <div className={styles.container}>
       <Helmet>
         <title>
-          {'登录'}- {Settings.title}
+          {'注册'}- {Settings.title}
         </title>
       </Helmet>
       <div
@@ -135,11 +126,16 @@ const Login: React.FC = () => {
             minWidth: 280,
             maxWidth: '75vw',
           }}
+          submitter={{
+            searchConfig:{
+              submitText:'注册'
+            }
+          }}
           logo={<img alt="logo" src="/logo.svg" />}
           title="智能 BI"
           subTitle={'基于ai技术的商业智能分析平台'}
           onFinish={async (values) => {
-            await handleSubmit(values as API.UserLoginRequest);
+            await handleSubmit(values as API.UserRegisterRequest);
           }}
         >
           <Tabs
@@ -149,11 +145,11 @@ const Login: React.FC = () => {
             items={[
               {
                 key: 'account',
-                label: '账户密码登录',
+                label: '用户注册',
               },
               // {
               //   key: 'mobile',
-              //   label: '手机号登录',
+              //   label: '手机号注册',
               // },
             ]}
           />
@@ -166,7 +162,7 @@ const Login: React.FC = () => {
                   size: 'large',
                   prefix: <UserOutlined />,
                 }}
-                placeholder={'请输入用户名'}
+                placeholder={'输入用户名'}
                 rules={[
                   {
                     required: true,
@@ -180,11 +176,25 @@ const Login: React.FC = () => {
                   size: 'large',
                   prefix: <LockOutlined />,
                 }}
-                placeholder={'请输入密码'}
+                placeholder={'输入密码'}
                 rules={[
                   {
                     required: true,
                     message: '密码是必填项！',
+                  },
+                ]}
+              />
+              <ProFormText.Password
+                name="checkPassword"
+                fieldProps={{
+                  size: 'large',
+                  prefix: <LockOutlined />,
+                }}
+                placeholder={'重复输入密码'}
+                rules={[
+                  {
+                    required: true,
+                    message: '确认密码是必填项！',
                   },
                 ]}
               />
@@ -196,7 +206,6 @@ const Login: React.FC = () => {
               marginBottom: 24,
             }}
           >
-            <Link to="/user/register">注册</Link>
           </div>
         </LoginForm>
       </div>
@@ -204,4 +213,4 @@ const Login: React.FC = () => {
     </div>
   );
 };
-export default Login;
+export default Register;
